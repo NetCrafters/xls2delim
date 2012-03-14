@@ -1,0 +1,145 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Long;
+use Spreadsheet::ParseExcel;
+use FindBin;
+
+my %cmd = ();
+GetOptions ( 
+	\%cmd =>
+		"output-file:s",
+		"delimiter:s",
+		"line-ending:s",
+		"worksheet-name:s",
+		"worksheet-number:i",
+		"row-min:i",
+		"row-max:i",
+		"col-min:i",
+		"col-max:i",
+		"help"
+);
+
+# if help is requested
+if ($cmd{help}) {
+	print_help();
+	exit;
+}
+
+# if no file name is provided
+my $file_name = $ARGV[0];
+if (!$file_name) {
+	print "Usage: $FindBin::Script [options] filename\n";
+	print "Try '$FindBin::Script --help' for more information.\n";
+	exit;
+}
+
+# set defaults
+my $worksheet_name = $cmd{'worksheet-name'} || '';
+my $worksheet_number = $cmd{'worksheet-number'} || 0;
+my $delimiter = $cmd{'delimiter'} || '|';
+eval "\$delimiter = \"$delimiter\""; # re-escape any escaped chars
+my $line_ending = $cmd{'line-ending'} || "\n";
+eval "\$line_ending = \"$line_ending\""; # re-escape any escaped chars
+
+# open spreadsheet, create object
+my $parser = Spreadsheet::ParseExcel->new();
+my $workbook = $parser->parse($file_name);
+if ( !defined $workbook ) { die $parser->error(), ".\n" }
+
+# select a worksheet
+# default is the first worksheet
+my $worksheet;
+if ($cmd{'worksheet-name'}) {
+	$worksheet = $workbook->worksheet($cmd{'worksheet-name'});
+} elsif ($cmd{'worksheet-number'}) {
+	$worksheet = $workbook->worksheet($cmd{'worksheet-number'});
+} else {
+	$worksheet = $workbook->worksheet(0);
+}
+
+# get spreadsheet boundaries
+my ($row_min, $row_max) = $worksheet->row_range();
+my ($col_min, $col_max) = $worksheet->col_range();
+
+# override boundaries if there are command line options
+$row_min = $cmd{'row-min'} if $cmd{'row-min'};
+$row_max = $cmd{'row-max'} if $cmd{'row-max'};
+$col_min = $cmd{'col-min'} if $cmd{'col-min'};
+$col_max = $cmd{'col-max'} if $cmd{'col-max'};
+
+# print it
+*TEST = *STDOUT;
+if ($cmd{'output-file'}) {
+	*STDOUT_SAVE = *STDOUT;
+	open F,">$cmd{'output-file'}";
+	*STDOUT = *F;
+}
+for my $row ($row_min..$row_max) {
+	for my $col ($col_min..$col_max) {
+		my $cell = $worksheet->get_cell($row,$col);
+		if (!$cell) {
+			print "";
+		} else {
+			print $cell->value();
+		}
+		print $delimiter unless ($col == $col_max);
+	}
+	print $line_ending;
+}
+if ($cmd{'output-file'}) {
+	*STDOUT = *STDOUT_SAVE;
+	close F;
+}
+
+# ----------------------------
+
+sub print_help {
+
+print <<HELP;
+
+Usage:
+      $FindBin::Script [options] filename
+          where 'filename' is the Excel spreadsheet file to read.
+
+Options:
+      --output-file
+          File name to save the delimited text output to, otherwise output goes
+          to STDOUT.
+
+      --delimiter
+          Character(s) to use as the delimiter between fields. Default is pipe.
+          
+      --line-ending
+          Character(s) to use at the end of each row. Default is a single line feed.
+
+      --worksheet-name
+          Use this specify a particular worksheet name within the workbook. Takes
+          precedence over the --worksheet-number option.
+
+      --worksheet-number
+          Use this specify a particular worksheet within the workbook by the order
+          in which it appears. Default is 0, the first worksheet.
+
+      --row-min --row-max --col-min --col-max
+          Set the cell boundaries to be used when reading the worksheet. Defaults to
+          the top left (row 0, col 0) to the last row and column detected in the worksheet.
+
+      --help
+          Show this screen.
+
+Examples:
+      Print all cells in the first worksheet in the file.xls spreadsheet to
+      standard output (screen) using all default options.
+
+        $FindBin::Script file.xls
+      
+      Use a worksheet named Worksheet5, tab delimiter, carriage return and line feed line
+      endings, start at row 3 column 2, and save the output to a file named new file.txt.
+
+        $FindBin::Script --output-file newfile.txt --delimiter "\\t" --line-ending "\\r\\n"
+        --worksheet-name "Worksheet5" --row-min 3 --col-min 2 file.xls
+      
+HELP
+
+}
