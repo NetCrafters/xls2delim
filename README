@@ -1,0 +1,47 @@
+Description:
+      This is a quick and simple command line utility to convert an Excel spreadsheet
+      to a delimited file. It's basically just a wrapper for the Spreadsheet::ParseExcel
+      perl module. That module is required to run this script.
+
+Usage:
+      xls2delim [options] filename
+          where 'filename' is the Excel spreadsheet file to read.
+
+Options:
+      --output-file
+          File name to save the delimited text output to, otherwise output goes
+          to STDOUT.
+
+      --delimiter
+          Character(s) to use as the delimiter between fields. Default is pipe.
+          
+      --line-ending
+          Character(s) to use at the end of each row. Default is a single line feed.
+
+      --worksheet-name
+          Use this specify a particular worksheet name within the workbook. Takes
+          precedence over the --worksheet-number option.
+
+      --worksheet-number
+          Use this specify a particular worksheet within the workbook by the order
+          in which it appears. Default is 0, the first worksheet.
+
+      --row-min --row-max --col-min --col-max
+          Set the cell boundaries to be used when reading the worksheet. Defaults to
+          the top left (row 0, col 0) to the last row and column detected in the worksheet.
+
+      --help
+          Show this screen.
+
+Examples:
+      Print all cells in the first worksheet in the file.xls spreadsheet to
+      standard output (screen) using all default options.
+
+        xls2delim file.xls
+      
+      Use a worksheet named Worksheet5, tab delimiter, carriage return and line feed line
+      endings, start at row 3 column 2, and save the output to a file named newfile.txt.
+
+        xls2delim --output-file newfile.txt --delimiter "\t" --line-ending "\r\n"
+        --worksheet-name "Worksheet5" --row-min 3 --col-min 2 file.xls
+      
