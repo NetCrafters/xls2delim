@@ -135,7 +135,7 @@ Examples:
         $FindBin::Script file.xls
       
       Use a worksheet named Worksheet5, tab delimiter, carriage return and line feed line
-      endings, start at row 3 column 2, and save the output to a file named new file.txt.
+      endings, start at row 3 column 2, and save the output to a file named newfile.txt.
 
         $FindBin::Script --output-file newfile.txt --delimiter "\\t" --line-ending "\\r\\n"
         --worksheet-name "Worksheet5" --row-min 3 --col-min 2 file.xls
